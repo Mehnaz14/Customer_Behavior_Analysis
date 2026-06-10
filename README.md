@@ -1,6 +1,8 @@
 Project Overview
 A retail company observed shifts in purchasing behavior across demographics, product categories, and sales channels. This project builds a complete analytics pipeline to uncover what drives consumer decisions and repeat purchases — and translates those findings into concrete business recommendations.
 Central Question: How can consumer shopping data be used to identify trends, improve customer engagement, and optimize marketing and product strategies?
+
+
 Repository Structure
 customer-shopping-behavior/
 │
@@ -29,6 +31,9 @@ customer-shopping-behavior/
 │   └── Customer_Shopping_Behavior_Report.pdf
 │
 └── README.md
+ 
+ 
+ 
  SQL Analysis — 10 Business Questions
 Q1 · Revenue by Gender
 Male customers account for ~67% of total revenue ($157K vs $76K), revealing an untapped opportunity in female-focused marketing.
