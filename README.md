@@ -1,64 +1,170 @@
+Customer Shopping Behavior Analysis
+Uncovering Spending Patterns, Segmentation & Strategic Insights from 3,900 retail transactions.
+
 Project Overview
-A retail company observed shifts in purchasing behavior across demographics, product categories, and sales channels. This project builds a complete analytics pipeline to uncover what drives consumer decisions and repeat purchases — and translates those findings into concrete business recommendations.
-Central Question: How can consumer shopping data be used to identify trends, improve customer engagement, and optimize marketing and product strategies?
+
+A retail company observed shifts in customer purchasing patterns across demographics, product categories, and channels. This project explores those patterns through end-to-end data analysis — from raw data cleaning and ETL to SQL-based querying and Power BI visualization.
+
+Key Business Question:
+How can shopping data be leveraged to improve customer engagement and optimize marketing & product strategies?"
+
+🎯 Objectives
+1.Analyze spending patterns by gender, age group, and season
+2.Identify high-value products and top-rated items
+3.Compare subscriber vs. non-subscriber behavior
+4.Segment customers into New, Returning, and Loyal groups
+5.Evaluate the impact of discounts on revenue
+6.Rank top products within each category using window functions
+
+ Dataset Overview
+
+MetricValueTotal Records3,900Features18 columnsProduct Categories4 (Clothing, Accessories, Footwear, Outerwear)Geographic Coverage50 US StatesNull Values37 (Review Rating only
+
+Feature Groups
+
+GroupColumnsDemographicsAge, Gender, LocationPurchase DetailsItem, Category, Amount, Season, Size, ColorBehaviorDiscount, Frequency, Previous Purchases, Review RatingPayment / ShippingPayment Method, Shipping Type, Subscription StatusEngineeredAge Group, Purchase Frequency Days
+ 
+ Tech Stack
+
+ToolPurposePython (Pandas, NumPy, Seaborn)Data cleaning, EDA, feature engineeringPostgreSQL + SQLAlchemyETL pipeline, SQL analysisPower BIInteractive dashboard & visualization
+
+Data Cleaning & Feature Engineering
+
+ SQL Analysis — Key Queries & Findings
+
+Q1 · Revenue by Gender
+
+SELECT gender, SUM(purchase_amount) AS revenue
+FROM customer
+GROUP BY gender;
+
+Finding: Male customers generated $157,000 vs. female customers at $76,000 — males drive ~67% of total revenue.
+
+Q2 · Discount Buyers Above Average Spend
+
+SELECT customer_id, purchase_amount
+FROM customer
+WHERE discount_applied = 'Yes'
+AND purchase_amount >= (SELECT AVG(purchase_amount));
+
+Finding: ~1,850 discount buyers still exceeded the average spend of $59.76 — strong candidates for loyalty programs.
+
+Q3 · Top 5 Products by Average Review Rating
+
+SELECT item_purchased, ROUND(AVG(review_rating), 2) AS avg_rating
+FROM customer
+GROUP BY item_purchased
+ORDER BY avg_rating DESC
+LIMIT 5;
+
+Finding: Blouse, Jacket, Dress, Shirt, and Boots all scored an average rating of 4.0.
+
+Q4 · Standard vs. Express Shipping Impact
+
+Finding: Average spend under Standard shipping ≈ $60 vs. Express ≈ $59 — shipping type has minimal impact on purchase amount.
+
+Q5 · Subscriber vs. Non-Subscriber Spend
+
+GroupCustomersAvg SpendRevenueSubscribed1,860$60.5$112,530Not Subscribed2,040$59.1$120,564
+
+Finding: Subscribers spend slightly more per transaction, but non-subscribers generate higher total revenue due to volume.
+
+Q6 · Top 5 Products by Discount Rate
+
+SELECT item_purchased,
+ROUND(100.0 * SUM(CASE WHEN discount_applied = 'Yes' THEN 1 ELSE 0 END) / COUNT(*), 2) AS discount_rate
+FROM customer
+GROUP BY item_purchased
+ORDER BY discount_rate DESC
+LIMIT 5;
+
+Finding: Jeans (50%), Blouse (48%), Dress (47%), Sneakers (46%), Jacket (45%) — all heavily discounted items.
+
+Q7 · Customer Segmentation (CTE-Based)
+
+WITH segments AS (
+  SELECT customer_id,
+    CASE
+      WHEN previous_purchases = 1 THEN 'New'
+      WHEN previous_purchases BETWEEN 2 AND 10 THEN 'Returning'
+      ELSE 'Loyal'
+    END AS segment
+  FROM customer
+)
+SELECT segment, COUNT(*) AS customers FROM segments GROUP BY segment;
+
+Finding:
+New: 220 (6%)
+Returning: 1,980 (51%)
+Loyal: 1,700 (43%)
+
+Q8 · Top 3 Products Per Category (Window Function)
+
+SELECT category, item_purchased, order_count, rank
+FROM (
+  SELECT category, item_purchased,
+         COUNT(*) AS order_count,
+         RANK() OVER (PARTITION BY category ORDER BY COUNT(*) DESC) AS rank
+  FROM customer
+  GROUP BY category, item_purchased
+) ranked
+WHERE rank <= 3;
+
+Q9 · Repeat Buyers & Subscription Status
+
+Finding: Of buyers with >5 purchases, 1,640 are non-subscribers vs. 1,220 subscribed — a major opportunity to convert loyal customers into subscribers.
 
 
-Repository Structure
-customer-shopping-behavior/
+Q10 · Revenue by Age Group
+
+Age GroupRevenueMiddle-aged$68,900Adult$62,500Senior$58,800Young Adult$42,700
+
+Finding: Middle-aged customers (45–57) are the top revenue contributors.
+
+Key Insights & Takeaways
+
+InsightAction💰 Males drive 67% of revenueLaunch targeted campaigns for female segments🎁 Discount buyers still spend above averageUpsell them into loyalty & premium subscription programs👥 Middle-aged customers lead in revenueFocus marketing budgets on the 45–57 age bracket🔄 Loyal customers are largely non-subscribersOffer retention deals to convert repeat buyers📦 Clothing dominates all categoriesPrioritize Blouse & T-Shirt in inventory & promotions⭐ Product ratings are narrow (3.78–3.88)Low ROI on quality improvement; focus elsewhere
+
+ Project Structure
+
+ customer-shopping-behavior-analysis/
 │
 ├── data/
 │   └── customer_shopping_data.csv        # Raw dataset
 │
 ├── notebooks/
-│   └── shopping_behavior_analysis.ipynb  # Full EDA + preprocessing + SQL ETL
+│   └── shopping_analysis.ipynb           # EDA, cleaning & feature engineering
 │
 ├── sql/
-│   ├── q1_revenue_by_gender.sql
-│   ├── q2_discount_buyers_above_avg.sql
-│   ├── q3_top_products_by_rating.sql
-│   ├── q4_shipping_vs_spend.sql
-│   ├── q5_subscriber_spending.sql
-│   ├── q6_top_discount_products.sql
-│   ├── q7_customer_segmentation_cte.sql
-│   ├── q8_top_products_per_category.sql
-│   ├── q9_repeat_buyers_subscription.sql
-│   └── q10_revenue_by_age_group.sql
+│   └── queries.sql                       # All 10 SQL analysis queries
 │
-├── dashboard/
-│   └── customer_behavior_dashboard.pbix  # Power BI file
+├── powerbi/
+│   └── shopping_dashboard.pbix           # Power BI dashboard file
 │
 ├── reports/
-│   └── Customer_Shopping_Behavior_Report.pdf
+│   └── Customer_Shopping_Behavior_Report.docx
 │
 └── README.md
- 
- 
- 
- SQL Analysis — 10 Business Questions
-Q1 · Revenue by Gender
-Male customers account for ~67% of total revenue ($157K vs $76K), revealing an untapped opportunity in female-focused marketing.
-Q2 · Discount Buyers Spending Above Average
-~1,850 customers used discounts and spent above the $59.76 average — prime candidates for loyalty program conversion.
-Q3 · Top 5 Products by Review Rating
-Ratings are tightly clustered (3.78–3.88), indicating uniformly positive satisfaction. Quality improvement has low incremental ROI.
-Q4 · Shipping Type vs Spend
-Only a $1.10 difference between Standard ($60.20) and Express ($59.10) buyers. Shipping preference ≠ purchase value.
-Q5 · Subscribers vs Non-Subscribers
-Subscribed customers have a slightly higher avg spend ($60.50 vs $59.10), but non-subscribers make up the larger base. Converting frequent buyers to subscribers is a key LTV opportunity.
-Q6 · Top Products by Discount Rate
-Jeans lead with a 50% discount rate — nearly every other purchase uses a discount. Margin compression risk is highest here.
-Q7 · Customer Segmentation (CTE)
-Only 6% new customers → acquisition strategy needs attention.
-Q8 · Top 3 Products Per Category (Window Function)
-Blouse leads all products with 171 orders. Clothing dominates volume across all categories.
-Q9 · Repeat Buyers & Subscription Status
-1,640 repeat buyers are non-subscribers vs 1,220 subscribers — a major retention opportunity. Subscription incentives (discounts, early access) could drive meaningful growth.
-Q10 · Revenue by Age Group
-Middle-aged customers (45–57) are the top revenue segment at $68,900. Young Adults (18–31) have the most headroom for digital campaign growth.
 
- Future Enhancements
+How to Run
 
- Time-series analysis of seasonal purchasing trends
- Customer Lifetime Value (CLV) modelling
- Cohort retention analysis
- Churn prediction using machine learning
+1. Clone the Repository
+
+bashgit clone https://github.com/Mehnaz14/customer-shopping-behavior-analysis.git
+cd customer-shopping-behavior-analysis
+
+2. Install Dependencies
+
+bashpip install pandas numpy matplotlib seaborn sqlalchemy psycopg2
+
+3. Run the Notebook
+
+Open notebooks/shopping_analysis.ipynb in Jupyter and run all cells for data cleaning, EDA, and ETL to PostgreSQL.
+
+4. Run SQL Queries
+
+Connect to your PostgreSQL instance and run sql/queries.sql after the ETL step loads the data.
+
+5. View the Dashboard
+
+Open powerbi/shopping_dashboard.pbix in Power BI Desktop.
